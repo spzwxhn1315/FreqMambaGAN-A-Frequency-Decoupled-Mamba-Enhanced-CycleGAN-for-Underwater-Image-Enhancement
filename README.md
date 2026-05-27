@@ -1,37 +1,4 @@
 ## Symbol Definitions
-| Symbol                             | Meaning                                                             |
-| ---------------------------------- | ------------------------------------------------------------------- |
-| (\mathcal{A})                      | degraded underwater image domain                                    |
-| (\mathcal{B})                      | visually enhanced or reference-quality underwater image domain      |
-| (x_A)                              | unpaired degraded underwater image sampled from (\mathcal{A})       |
-| (x_B)                              | unpaired reference-style image sampled from (\mathcal{B})           |
-| ((x_A^p,x_B^p))                    | paired degraded/reference sample used for supervised anchoring      |
-| (\mathcal{P})                      | paired training set                                                 |
-| (\mathcal{U}_A,\mathcal{U}_B)      | unpaired training sets from domains (\mathcal{A}) and (\mathcal{B}) |
-| (\mathcal{V})                      | validation set for checkpoint selection                             |
-| (G_{A\rightarrow B})               | forward enhancement generator                                       |
-| (G_{B\rightarrow A})               | backward degradation-domain generator                               |
-| (D_A,D_B)                          | domain discriminators for (\mathcal{A}) and (\mathcal{B})           |
-| (\Theta_G,\Theta_D)                | trainable generator and discriminator parameters                    |
-| (\Gamma_{\mathrm{enc}})            | shallow encoder parameter subset used for staged freezing           |
-| (\Gamma_{\mathrm{ssm}})            | selected state-space parameter subset stabilized during fine-tuning |
-| (\rho)                             | symbolic frequency partition boundary                               |
-| (\mathcal{E}(\cdot))               | encoder operation                                                   |
-| (\mathcal{F}_{\rho}(\cdot))        | symbolic frequency decomposition operator                           |
-| (\mathcal{M}_{H}(\cdot))           | high-frequency contextual modeling branch                           |
-| (\mathcal{M}_{L}(\cdot))           | low-frequency contextual modeling branch                            |
-| (\mathcal{C}(\cdot))               | feature fusion operation                                            |
-| (\mathcal{R}(\cdot))               | decoder reconstruction operation                                    |
-| (\mathcal{S}(\cdot,\cdot))         | skip-attention fusion operation                                     |
-| (\Phi(\cdot))                      | frozen perceptual feature extractor                                 |
-| (\Psi_{\mathrm{dc}}(\cdot))        | dark-channel consistency prior                                      |
-| (\Psi_{\mathrm{phy}}(\cdot,\cdot)) | simplified physics-inspired consistency prior                       |
-| (\Lambda)                          | set of symbolic loss weights                                        |
-| (\alpha_G,\alpha_D)                | generator and discriminator learning-rate symbols                   |
-| (\Omega_D(\tau))                   | symbolic discriminator update schedule                              |
-| (\mathcal{Q}(\cdot))               | validation-based model selection criterion                          |
-| (\varepsilon)                      | minimum improvement tolerance for checkpoint updating               |
-| (\tau)                             | symbolic training step index                                        |
 
 | Symbol                             | Meaning                                                             |
 | ---------------------------------- | ------------------------------------------------------------------- |
