@@ -8,68 +8,68 @@ The pseudocode below describes only the public academic logic of the method: bid
 
 ## Symbol Definition Table
 
-| Symbol | Academic meaning |
-|---|---|
-| $A$ | Degraded underwater image domain |
-| $B$ | Clear or reference-quality underwater image domain |
-| $x_A$ | Sample drawn from domain $A$ |
-| $x_B$ | Sample drawn from domain $B$ |
-| $\hat{x}_B$ | Enhanced output generated from $x_A$ |
-| $\hat{x}_A$ | Degraded-domain output generated from $x_B$ |
-| $\widetilde{x}_A$ | Cycle-reconstructed sample in domain $A$ |
-| $\widetilde{x}_B$ | Cycle-reconstructed sample in domain $B$ |
-| $\mathcal{D}_{AB}^{p}$ | Paired degraded/reference training set |
-| $\mathcal{D}_{A}^{u}$ | Unpaired degraded-domain training set |
-| $\mathcal{D}_{B}^{u}$ | Unpaired clear-domain training set |
-| $\mathcal{V}_{AB}^{p}$ | Paired validation set |
-| $\mathcal{V}_{A}^{u}$ | Unpaired degraded-domain validation set |
-| $G_{A\rightarrow B}$ | Forward enhancement generator |
-| $G_{B\rightarrow A}$ | Reverse degradation-style generator |
-| $D_A$ | Discriminator for domain $A$ |
-| $D_B$ | Discriminator for domain $B$ |
-| $\Theta_G$ | Generator parameter set |
-| $\Theta_D$ | Discriminator parameter set |
-| $\mathcal{E}$ | Encoder abstraction |
-| $\mathcal{B}$ | Protected frequency-decoupled Mamba bottleneck abstraction |
-| $\mathcal{R}$ | Decoder or reconstruction abstraction |
-| $\mathcal{A}_{s}$ | Skip-attention operator |
-| $\mathcal{A}_{f}$ | Frequency-branch fusion operator |
-| $\mathcal{F}$ | Centered orthonormal spectral transform |
-| $\mathcal{F}^{-}$ | Inverse centered orthonormal spectral transform |
-| $\mathcal{M}_{\delta}$ | Symbolic low-frequency selection mask controlled by threshold $\delta$ |
-| $\overline{\mathcal{M}}_{\delta}$ | Complementary high-frequency selection mask |
-| $\mathcal{S}_{g}$ | Generic global selective state-space modeling operator |
-| $\mathcal{S}_{l}$ | Generic local patch-wise selective state-space modeling operator |
-| $\mathcal{P}$ | Generic non-overlapping patch partition and restoration operator |
-| $\Phi$ | Current training phase |
-| $\mathcal{T}_{\Phi}$ | Symbolic iteration schedule of phase $\Phi$ |
-| $\alpha_G$ | Generator learning-rate symbol |
-| $\alpha_D$ | Discriminator learning-rate symbol |
-| $\omega$ | Generic trainable parameter symbol |
-| $\beta_r$ | Soft real-label symbol in adversarial training |
-| $\beta_f$ | Soft fake-label symbol in adversarial training |
-| $\kappa_D$ | Symbolic discriminator update policy |
-| $\lambda_{adv}^{\Phi}$ | Adversarial-loss weight in phase $\Phi$ |
-| $\lambda_{cyc}^{\Phi}$ | Cycle-consistency-loss weight in phase $\Phi$ |
-| $\lambda_{id}^{\Phi}$ | Identity-loss weight in phase $\Phi$ |
-| $\lambda_{tv}^{\Phi}$ | Total-variation-loss weight in phase $\Phi$ |
-| $\lambda_{per}^{\Phi}$ | Perceptual-loss weight in phase $\Phi$ |
-| $\lambda_{anc}^{\Phi}$ | Paired-anchor-loss weight in phase $\Phi$ |
-| $\lambda_{dark}^{\Phi}$ | Dark-channel-consistency weight in phase $\Phi$ |
-| $\lambda_{phy}^{\Phi}$ | Physics-guided-consistency weight in phase $\Phi$ |
-| $\mathcal{L}_{adv}^{G}$ | Generator-side least-squares adversarial loss |
-| $\mathcal{L}_{adv}^{D}$ | Discriminator-side least-squares adversarial loss |
-| $\mathcal{L}_{cyc}$ | Bidirectional cycle-consistency loss |
-| $\mathcal{L}_{id}$ | Bidirectional identity loss |
-| $\mathcal{L}_{tv}$ | Forward-direction total-variation regularization |
-| $\mathcal{L}_{per}$ | Forward-direction perceptual regularization |
-| $\mathcal{L}_{anc}$ | Forward-direction paired absolute-error anchor loss |
-| $\mathcal{L}_{dark}$ | Dark-channel consistency regularization |
-| $\mathcal{L}_{phy}$ | Simplified physics-inspired consistency regularization |
-| $S_q$ | Validation image-quality score |
-| $S_{phy}$ | Validation physical-consistency score |
-| $S_{save}$ | Checkpoint-selection score |
-| $\epsilon$ | Minimum symbolic improvement threshold for model saving |
+| Symbol                            | Academic meaning                                             |
+| --------------------------------- | ------------------------------------------------------------ |
+| $A$                               | Degraded underwater image domain                             |
+| $B$                               | Clear or reference-quality underwater image domain           |
+| $x_A$                             | Sample drawn from domain $A$                                 |
+| $x_B$                             | Sample drawn from domain $B$                                 |
+| $\hat{x}_B$                       | Enhanced output generated from $x_A$                         |
+| $\hat{x}_A$                       | Degraded-domain output generated from $x_B$                  |
+| $\widetilde{x}_A$                 | Cycle-reconstructed sample in domain $A$                     |
+| $\widetilde{x}_B$                 | Cycle-reconstructed sample in domain $B$                     |
+| $\mathcal{D}_{AB}^{p}$            | Paired degraded/reference training set                       |
+| $\mathcal{D}_{A}^{u}$             | Unpaired degraded-domain training set                        |
+| $\mathcal{D}_{B}^{u}$             | Unpaired clear-domain training set                           |
+| $\mathcal{V}_{AB}^{p}$            | Paired validation set                                        |
+| $\mathcal{V}_{A}^{u}$             | Unpaired degraded-domain validation set                      |
+| $G_{A\rightarrow B}$              | Forward enhancement generator                                |
+| $G_{B\rightarrow A}$              | Reverse degradation-style generator                          |
+| $D_A$                             | Discriminator for domain $A$                                 |
+| $D_B$                             | Discriminator for domain $B$                                 |
+| $\Theta_G$                        | Generator parameter set                                      |
+| $\Theta_D$                        | Discriminator parameter set                                  |
+| $\mathcal{E}$                     | Encoder abstraction                                          |
+| $\mathcal{B}$                     | Protected frequency-decoupled Mamba bottleneck abstraction   |
+| $\mathcal{R}$                     | Decoder or reconstruction abstraction                        |
+| $\mathcal{A}_{s}$                 | Skip-attention operator                                      |
+| $\mathcal{A}_{f}$                 | Frequency-branch fusion operator                             |
+| $\mathcal{F}$                     | Centered orthonormal spectral transform                      |
+| $\mathcal{F}^{-}$                 | Inverse centered orthonormal spectral transform              |
+| $\mathcal{M}_{\delta}$            | Symbolic low-frequency selection mask controlled by threshold $\delta$ |
+| $\overline{\mathcal{M}}_{\delta}$ | Complementary high-frequency selection mask                  |
+| $\mathcal{S}_{g}$                 | Generic global selective state-space modeling operator       |
+| $\mathcal{S}_{l}$                 | Generic local patch-wise selective state-space modeling operator |
+| $\mathcal{P}$                     | Generic non-overlapping patch partition and restoration operator |
+| $\Phi$                            | Current training phase                                       |
+| $\mathcal{T}_{\Phi}$              | Symbolic iteration schedule of phase $\Phi$                  |
+| $\alpha_G$                        | Generator learning-rate symbol                               |
+| $\alpha_D$                        | Discriminator learning-rate symbol                           |
+| $\omega$                          | Generic trainable parameter symbol                           |
+| $\beta_r$                         | Soft real-label symbol in adversarial training               |
+| $\beta_f$                         | Soft fake-label symbol in adversarial training               |
+| $\kappa_D$                        | Symbolic discriminator update policy                         |
+| $\lambda_{adv}^{\Phi}$            | Adversarial-loss weight in phase $\Phi$                      |
+| $\lambda_{cyc}^{\Phi}$            | Cycle-consistency-loss weight in phase $\Phi$                |
+| $\lambda_{id}^{\Phi}$             | Identity-loss weight in phase $\Phi$                         |
+| $\lambda_{tv}^{\Phi}$             | Total-variation-loss weight in phase $\Phi$                  |
+| $\lambda_{per}^{\Phi}$            | Perceptual-loss weight in phase $\Phi$                       |
+| $\lambda_{anc}^{\Phi}$            | Paired-anchor-loss weight in phase $\Phi$                    |
+| $\lambda_{dark}^{\Phi}$           | Dark-channel-consistency weight in phase $\Phi$              |
+| $\lambda_{phy}^{\Phi}$            | Physics-guided-consistency weight in phase $\Phi$            |
+| $\mathcal{L}_{adv}^{G}$           | Generator-side least-squares adversarial loss                |
+| $\mathcal{L}_{adv}^{D}$           | Discriminator-side least-squares adversarial loss            |
+| $\mathcal{L}_{cyc}$               | Bidirectional cycle-consistency loss                         |
+| $\mathcal{L}_{id}$                | Bidirectional identity loss                                  |
+| $\mathcal{L}_{tv}$                | Forward-direction total-variation regularization             |
+| $\mathcal{L}_{per}$               | Forward-direction perceptual regularization                  |
+| $\mathcal{L}_{anc}$               | Forward-direction paired absolute-error anchor loss          |
+| $\mathcal{L}_{dark}$              | Dark-channel consistency regularization                      |
+| $\mathcal{L}_{phy}$               | Simplified physics-inspired consistency regularization       |
+| $S_q$                             | Validation image-quality score                               |
+| $S_{phy}$                         | Validation physical-consistency score                        |
+| $S_{save}$                        | Checkpoint-selection score                                   |
+| $\epsilon$                        | Minimum symbolic improvement threshold for model saving      |
 
 ## Algorithm A: Reviewer-Facing Inference Workflow
 
@@ -279,31 +279,13 @@ $$
 For the cycle-adversarial phases, the symbolic generator objective is:
 
 $$
-\mathcal{L}_{G}^{\Phi}
-=
-\lambda_{adv}^{\Phi}\mathcal{L}_{adv}^{G}
-+
-\lambda_{cyc}^{\Phi}\mathcal{L}_{cyc}
-+
-\lambda_{id}^{\Phi}\mathcal{L}_{id}
-+
-\lambda_{tv}^{\Phi}\mathcal{L}_{tv}
-+
-\lambda_{per}^{\Phi}\mathcal{L}_{per}
-+
-\lambda_{anc}^{\Phi}\mathcal{L}_{anc}.
+\mathcal{L}_{G}^{\Phi} = \lambda_{adv}^{\Phi}\mathcal{L}_{adv}^{G} + \lambda_{cyc}^{\Phi}\mathcal{L}_{cyc} + \lambda_{id}^{\Phi}\mathcal{L}_{id} + \lambda_{tv}^{\Phi}\mathcal{L}_{tv} + \lambda_{per}^{\Phi}\mathcal{L}_{per} + \lambda_{anc}^{\Phi}\mathcal{L}_{anc}.
 $$
 
 For the physics-guided fine-tuning phase, the objective is extended as:
 
 $$
-\mathcal{L}_{G}^{\Phi}
-\leftarrow
-\mathcal{L}_{G}^{\Phi}
-+
-\lambda_{dark}^{\Phi}\mathcal{L}_{dark}
-+
-\lambda_{phy}^{\Phi}\mathcal{L}_{phy}.
+\mathcal{L}_{G}^{\Phi} \leftarrow \mathcal{L}_{G}^{\Phi} + \lambda_{dark}^{\Phi}\mathcal{L}_{dark} + \lambda_{phy}^{\Phi}\mathcal{L}_{phy}.
 $$
 
 Here, $\mathcal{L}_{tv}$, $\mathcal{L}_{per}$, $\mathcal{L}_{anc}$, $\mathcal{L}_{dark}$, and $\mathcal{L}_{phy}$ are applied to the forward enhancement direction $A\rightarrow B$ rather than symmetrically to both mappings.
@@ -313,13 +295,7 @@ Here, $\mathcal{L}_{tv}$, $\mathcal{L}_{per}$, $\mathcal{L}_{anc}$, $\mathcal{L}
 The symbolic image-quality score is expressed as:
 
 $$
-S_q
-=
-\eta_P\Psi_P(PSNR)
-+
-\eta_S\Psi_S(SSIM)
-+
-\eta_E\Psi_E(E_{abs}).
+S_q = \eta_P\Psi_P(\mathrm{PSNR}) + \eta_S\Psi_S(\mathrm{SSIM}) + \eta_E\Psi_E(E_{\mathrm{abs}}).
 $$
 
 The symbolic physics-consistency score is expressed as:
