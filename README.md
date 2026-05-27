@@ -1,5 +1,6 @@
 ## Symbol Definitions
 
+---
 | Symbol                             | Meaning                                                             |
 | ---------------------------------- | ------------------------------------------------------------------- |
 | (\mathcal{A})                      | degraded underwater image domain                                    |
