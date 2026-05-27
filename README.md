@@ -1,258 +1,351 @@
-## Symbol Definitions
+# FreqMambaGAN Secure Academic Pseudocode
 
----
-| Symbol                             | Meaning                                                             |
-| ---------------------------------- | ------------------------------------------------------------------- |
-| (\mathcal{A})                      | degraded underwater image domain                                    |
-| (\mathcal{B})                      | visually enhanced or reference-quality underwater image domain      |
-| (x_A)                              | unpaired degraded underwater image sampled from (\mathcal{A})       |
-| (x_B)                              | unpaired reference-style image sampled from (\mathcal{B})           |
-| ((x_A^p,x_B^p))                    | paired degraded/reference sample used for supervised anchoring      |
-| (\mathcal{P})                      | paired training set                                                 |
-| (\mathcal{U}_A,\mathcal{U}_B)      | unpaired training sets from domains (\mathcal{A}) and (\mathcal{B}) |
-| (\mathcal{V})                      | validation set for checkpoint selection                             |
-| (G_{A\rightarrow B})               | forward enhancement generator                                       |
-| (G_{B\rightarrow A})               | backward degradation-domain generator                               |
-| (D_A,D_B)                          | domain discriminators for (\mathcal{A}) and (\mathcal{B})           |
-| (\Theta_G,\Theta_D)                | trainable generator and discriminator parameters                    |
-| (\Gamma_{\mathrm{enc}})            | shallow encoder parameter subset used for staged freezing           |
-| (\Gamma_{\mathrm{ssm}})            | selected state-space parameter subset stabilized during fine-tuning |
-| (\rho)                             | symbolic frequency partition boundary                               |
-| (\mathcal{E}(\cdot))               | encoder operation                                                   |
-| (\mathcal{F}_{\rho}(\cdot))        | symbolic frequency decomposition operator                           |
-| (\mathcal{M}_{H}(\cdot))           | high-frequency contextual modeling branch                           |
-| (\mathcal{M}_{L}(\cdot))           | low-frequency contextual modeling branch                            |
-| (\mathcal{C}(\cdot))               | feature fusion operation                                            |
-| (\mathcal{R}(\cdot))               | decoder reconstruction operation                                    |
-| (\mathcal{S}(\cdot,\cdot))         | skip-attention fusion operation                                     |
-| (\Phi(\cdot))                      | frozen perceptual feature extractor                                 |
-| (\Psi_{\mathrm{dc}}(\cdot))        | dark-channel consistency prior                                      |
-| (\Psi_{\mathrm{phy}}(\cdot,\cdot)) | simplified physics-inspired consistency prior                       |
-| (\Lambda)                          | set of symbolic loss weights                                        |
-| (\alpha_G,\alpha_D)                | generator and discriminator learning-rate symbols                   |
-| (\Omega_D(\tau))                   | symbolic discriminator update schedule                              |
-| (\mathcal{Q}(\cdot))               | validation-based model selection criterion                          |
-| (\varepsilon)                      | minimum improvement tolerance for checkpoint updating               |
-| (\tau)                             | symbolic training step index                                        |
+This document provides a reviewer-facing pseudocode description of FreqMambaGAN. It is intended to clarify the end-to-end algorithmic workflow without exposing implementation-specific source code, private operators, fixed numerical settings, dataset paths, or patent-sensitive engineering details. All tunable quantities are expressed symbolically.
 
----
+## Confidentiality and Scope Statement
 
-## Algorithm A. Confidential High-Level Pseudocode of FreqMambaGAN
+The pseudocode below describes only the public academic logic of the method: bidirectional domain translation, frequency-decoupled feature restoration, selective state-space feature modeling, skip-attention reconstruction, multi-phase optimization, and validation-based checkpoint selection. Proprietary low-level implementations, engineering optimizations, private iteration rules, hardware-specific acceleration details, and reproducible source-level module internals are intentionally abstracted as generic mathematical operators.
+
+## Symbol Definition Table
+
+| Symbol                            | Academic meaning                                             |
+| --------------------------------- | ------------------------------------------------------------ |
+| $A$                               | Degraded underwater image domain                             |
+| $B$                               | Clear or reference-quality underwater image domain           |
+| $x_A$                             | Sample drawn from domain $A$                                 |
+| $x_B$                             | Sample drawn from domain $B$                                 |
+| $\hat{x}_B$                       | Enhanced output generated from $x_A$                         |
+| $\hat{x}_A$                       | Degraded-domain output generated from $x_B$                  |
+| $\widetilde{x}_A$                 | Cycle-reconstructed sample in domain $A$                     |
+| $\widetilde{x}_B$                 | Cycle-reconstructed sample in domain $B$                     |
+| $\mathcal{D}_{AB}^{p}$            | Paired degraded/reference training set                       |
+| $\mathcal{D}_{A}^{u}$             | Unpaired degraded-domain training set                        |
+| $\mathcal{D}_{B}^{u}$             | Unpaired clear-domain training set                           |
+| $\mathcal{V}_{AB}^{p}$            | Paired validation set                                        |
+| $\mathcal{V}_{A}^{u}$             | Unpaired degraded-domain validation set                      |
+| $G_{A\rightarrow B}$              | Forward enhancement generator                                |
+| $G_{B\rightarrow A}$              | Reverse degradation-style generator                          |
+| $D_A$                             | Discriminator for domain $A$                                 |
+| $D_B$                             | Discriminator for domain $B$                                 |
+| $\Theta_G$                        | Generator parameter set                                      |
+| $\Theta_D$                        | Discriminator parameter set                                  |
+| $\mathcal{E}$                     | Encoder abstraction                                          |
+| $\mathcal{B}$                     | Protected frequency-decoupled Mamba bottleneck abstraction   |
+| $\mathcal{R}$                     | Decoder or reconstruction abstraction                        |
+| $\mathcal{A}_{s}$                 | Skip-attention operator                                      |
+| $\mathcal{A}_{f}$                 | Frequency-branch fusion operator                             |
+| $\mathcal{F}$                     | Centered orthonormal spectral transform                      |
+| $\mathcal{F}^{-}$                 | Inverse centered orthonormal spectral transform              |
+| $\mathcal{M}_{\delta}$            | Symbolic low-frequency selection mask controlled by threshold $\delta$ |
+| $\overline{\mathcal{M}}_{\delta}$ | Complementary high-frequency selection mask                  |
+| $\mathcal{S}_{g}$                 | Generic global selective state-space modeling operator       |
+| $\mathcal{S}_{l}$                 | Generic local patch-wise selective state-space modeling operator |
+| $\mathcal{P}$                     | Generic non-overlapping patch partition and restoration operator |
+| $\Phi$                            | Current training phase                                       |
+| $\mathcal{T}_{\Phi}$              | Symbolic iteration schedule of phase $\Phi$                  |
+| $\alpha_G$                        | Generator learning-rate symbol                               |
+| $\alpha_D$                        | Discriminator learning-rate symbol                           |
+| $\omega$                          | Generic trainable parameter symbol                           |
+| $\beta_r$                         | Soft real-label symbol in adversarial training               |
+| $\beta_f$                         | Soft fake-label symbol in adversarial training               |
+| $\kappa_D$                        | Symbolic discriminator update policy                         |
+| $\lambda_{adv}^{\Phi}$            | Adversarial-loss weight in phase $\Phi$                      |
+| $\lambda_{cyc}^{\Phi}$            | Cycle-consistency-loss weight in phase $\Phi$                |
+| $\lambda_{id}^{\Phi}$             | Identity-loss weight in phase $\Phi$                         |
+| $\lambda_{tv}^{\Phi}$             | Total-variation-loss weight in phase $\Phi$                  |
+| $\lambda_{per}^{\Phi}$            | Perceptual-loss weight in phase $\Phi$                       |
+| $\lambda_{anc}^{\Phi}$            | Paired-anchor-loss weight in phase $\Phi$                    |
+| $\lambda_{dark}^{\Phi}$           | Dark-channel-consistency weight in phase $\Phi$              |
+| $\lambda_{phy}^{\Phi}$            | Physics-guided-consistency weight in phase $\Phi$            |
+| $\mathcal{L}_{adv}^{G}$           | Generator-side least-squares adversarial loss                |
+| $\mathcal{L}_{adv}^{D}$           | Discriminator-side least-squares adversarial loss            |
+| $\mathcal{L}_{cyc}$               | Bidirectional cycle-consistency loss                         |
+| $\mathcal{L}_{id}$                | Bidirectional identity loss                                  |
+| $\mathcal{L}_{tv}$                | Forward-direction total-variation regularization             |
+| $\mathcal{L}_{per}$               | Forward-direction perceptual regularization                  |
+| $\mathcal{L}_{anc}$               | Forward-direction paired absolute-error anchor loss          |
+| $\mathcal{L}_{dark}$              | Dark-channel consistency regularization                      |
+| $\mathcal{L}_{phy}$               | Simplified physics-inspired consistency regularization       |
+| $S_q$                             | Validation image-quality score                               |
+| $S_{phy}$                         | Validation physical-consistency score                        |
+| $S_{save}$                        | Checkpoint-selection score                                   |
+| $\epsilon$                        | Minimum symbolic improvement threshold for model saving      |
+
+## Algorithm A: Reviewer-Facing Inference Workflow
 
 ```text
 Input:
-    Paired dataset 𝒫 = {(x_A^p, x_B^p)}
-    Unpaired datasets 𝒰_A = {x_A}, 𝒰_B = {x_B}
-    Validation set 𝒱
-    Frequency partition symbol ρ
-    Loss-weight set Λ
-    Generator and discriminator learning symbols α_G, α_D
-    Training schedules 𝒯_sup, 𝒯_cyc^sta, 𝒯_cyc^ada, 𝒯_phy
-    Discriminator update schedule Ω_D(τ)
+    Degraded underwater image x_A
+    Forward generator G_{A→B} with parameters Θ_G
 
 Output:
-    Trained forward enhancement generator G*_{A→B}
-    Enhanced image x̂_B = G*_{A→B}(x_A)
+    Enhanced image \hat{x}_B
 
+Procedure:
+    Prepare x_A through the same public preprocessing protocol used in training.
 
-Procedure GeneratorForward(x; G, ρ):
+    Encode shallow-to-deep spatial features:
+        h = E(x_A)
 
-    h, s ← 𝔈(x; Θ_G)
-        ⟂ Encode the input image and preserve shallow spatial features s.
+    Apply the protected frequency-decoupled Mamba bottleneck:
+        z = B(h)
 
-    h_L, h_H ← 𝔉_ρ(h)
-        ⟂ Symbolically separate low-frequency appearance features
-          and high-frequency structural features.
+    Reconstruct the enhanced image with decoder and skip-attention fusion:
+        \hat{x}_B = R(z, A_s)
 
-    z_H ← 𝓜_H(h_H; Θ_G)
-        ⟂ Model high-frequency texture, edge, and structural dependencies.
-
-    z_L ← 𝓜_L(h_L; Θ_G)
-        ⟂ Model low-frequency color, illumination, and haze-related context.
-
-    z ← 𝓒(z_H, z_L, h; Θ_G)
-        ⟂ Fuse frequency-specific representations with residual stabilization.
-
-    y ← 𝓡(z, 𝓢(s); Θ_G)
-        ⟂ Reconstruct the image with skip-attention-guided spatial preservation.
-
-    return y
-
-
-Procedure DiscriminatorScore(x; D):
-
-    r ← D(x; Θ_D)
-        ⟂ Produce a patch-level realism score map without probability normalization.
-
-    return r
-
-
-Initialize:
-    Generators G_{A→B}, G_{B→A}
-    Discriminators D_A, D_B
-    Best validation score q* ← −∞
-
-
-Stage 𝒮_sup: Supervised Warm-Up
-
-    Freeze D_A and D_B.
-
-    For each τ ∈ 𝒯_sup do:
-
-        Sample paired data (x_A^p, x_B^p) from 𝒫.
-
-        x̂_B^p ← GeneratorForward(x_A^p; G_{A→B}, ρ)
-
-        𝓛_sup ← ‖x̂_B^p − x_B^p‖_abs
-
-        Update trainable parameters of G_{A→B}
-            by descending ∇_{Θ_G} 𝓛_sup with learning symbol α_G.
-
-        q ← 𝒬(G_{A→B}; 𝒱)
-
-        If q > q* + ε then:
-            q* ← q
-            Store current G_{A→B} as the best supervised checkpoint.
-
-
-Stage 𝒮_cyc^sta: Stabilized Cycle-Adversarial Learning
-
-    Freeze Γ_enc in G_{A→B}.
-    Activate trainable parameters of G_{B→A}, remaining G_{A→B}, D_A, and D_B.
-
-    For each τ ∈ 𝒯_cyc^sta do:
-
-        Sample x_A from 𝒰_A and x_B from 𝒰_B.
-        Sample paired anchor (x_A^p, x_B^p) from 𝒫.
-
-        x̂_B ← GeneratorForward(x_A; G_{A→B}, ρ)
-        x̃_A ← GeneratorForward(x̂_B; G_{B→A}, ρ)
-
-        x̂_A ← GeneratorForward(x_B; G_{B→A}, ρ)
-        x̃_B ← GeneratorForward(x̂_A; G_{A→B}, ρ)
-
-        x̂_B^p ← GeneratorForward(x_A^p; G_{A→B}, ρ)
-
-        𝓛_adv^G ← adversarial generator loss using D_A and D_B
-        𝓛_cyc ← ‖x̃_A − x_A‖_abs + ‖x̃_B − x_B‖_abs
-        𝓛_id ← identity-preserving loss for both translation directions
-        𝓛_TV ← total-variation regularization on x̂_B
-        𝓛_perc ← ‖Φ(x̂_B) − Φ(x_A)‖
-        𝓛_anc ← ‖x̂_B^p − x_B^p‖_abs
-
-        𝓛_G^cyc ←
-              λ_adv 𝓛_adv^G
-            + λ_cyc 𝓛_cyc
-            + λ_id 𝓛_id
-            + λ_TV 𝓛_TV
-            + λ_perc 𝓛_perc
-            + λ_anc 𝓛_anc
-
-        Update trainable generator parameters
-            by descending ∇_{Θ_G} 𝓛_G^cyc with learning symbol α_G.
-
-        If Ω_D(τ) is satisfied then:
-
-            r_B_real ← DiscriminatorScore(x_B; D_B)
-            r_B_fake ← DiscriminatorScore(stop_gradient(x̂_B); D_B)
-
-            r_A_real ← DiscriminatorScore(x_A; D_A)
-            r_A_fake ← DiscriminatorScore(stop_gradient(x̂_A); D_A)
-
-            𝓛_D ← least-squares discriminator loss over real and generated score maps
-
-            Update D_A and D_B
-                by descending ∇_{Θ_D} 𝓛_D with learning symbol α_D.
-
-        q ← 𝒬(G_{A→B}; 𝒱)
-
-        If q > q* + ε then:
-            q* ← q
-            Store current G_{A→B} as the best cycle-adversarial checkpoint.
-
-
-Stage 𝒮_cyc^ada: End-to-End Cycle-Adversarial Adaptation
-
-    Release Γ_enc according to the predefined trainability schedule.
-    Keep G_{A→B}, G_{B→A}, D_A, and D_B trainable.
-
-    For each τ ∈ 𝒯_cyc^ada do:
-
-        Repeat the bidirectional translation, cycle reconstruction,
-        forward anchor regularization, generator update,
-        scheduled discriminator update, and validation selection
-        defined in Stage 𝒮_cyc^sta.
-
-
-Stage 𝒮_phy: Physics-Guided Fine-Tuning
-
-    Freeze D_A and D_B as fixed adversarial scoring networks.
-    Freeze Γ_ssm to stabilize the learned state-space dynamics.
-    Keep the remaining generator parameters trainable.
-
-    For each τ ∈ 𝒯_phy do:
-
-        Sample x_A from 𝒰_A and x_B from 𝒰_B.
-        Sample paired anchor (x_A^p, x_B^p) from 𝒫.
-
-        x̂_B ← GeneratorForward(x_A; G_{A→B}, ρ)
-        x̃_A ← GeneratorForward(x̂_B; G_{B→A}, ρ)
-
-        x̂_A ← GeneratorForward(x_B; G_{B→A}, ρ)
-        x̃_B ← GeneratorForward(x̂_A; G_{A→B}, ρ)
-
-        x̂_B^p ← GeneratorForward(x_A^p; G_{A→B}, ρ)
-
-        𝓛_adv^G ← fixed-score adversarial generator loss using frozen D_A and D_B
-        𝓛_cyc ← ‖x̃_A − x_A‖_abs + ‖x̃_B − x_B‖_abs
-        𝓛_id ← identity-preserving loss for both translation directions
-        𝓛_TV ← total-variation regularization on x̂_B
-        𝓛_perc ← ‖Φ(x̂_B) − Φ(x_A)‖
-        𝓛_anc ← ‖x̂_B^p − x_B^p‖_abs
-
-        𝓛_dc ← Ψ_dc(x̂_B)
-            ⟂ Dark-channel consistency regularization.
-
-        𝓛_phy ← Ψ_phy(x_A, x̂_B)
-            ⟂ Simplified image-formation consistency regularization.
-
-        𝓛_G^phy ←
-              λ_adv^phy 𝓛_adv^G
-            + λ_cyc^phy 𝓛_cyc
-            + λ_id^phy 𝓛_id
-            + λ_TV^phy 𝓛_TV
-            + λ_perc^phy 𝓛_perc
-            + λ_anc^phy 𝓛_anc
-            + λ_dc 𝓛_dc
-            + λ_phy 𝓛_phy
-
-        Update trainable generator parameters
-            by descending ∇_{Θ_G} 𝓛_G^phy with learning symbol α_G.
-
-        q ← 𝒬(G_{A→B}; 𝒱)
-
-        If q > q* + ε then:
-            q* ← q
-            Store current G_{A→B} as the best physics-guided checkpoint.
-
-
-Inference:
-
-    Load G*_{A→B} selected by 𝒬.
-
-    For each degraded underwater image x_A do:
-        x̂_B ← GeneratorForward(x_A; G*_{A→B}, ρ)
-
-    return x̂_B
+    Return \hat{x}_B.
 ```
 
----
+## Algorithm B: Protected Frequency-Decoupled Mamba Bottleneck
 
-## Minimal Explanation for Manuscript
+```text
+Input:
+    Encoded feature tensor h
+    Symbolic frequency threshold δ
+    Generic global and local state-space operators S_g and S_l
 
-The above pseudocode summarizes the complete execution flow of FreqMambaGAN from input sampling to final enhanced-image generation. The forward generator first extracts hierarchical features, performs symbolic frequency decomposition, processes low-frequency and high-frequency components with separate contextual modeling branches, and reconstructs the enhanced image through fusion, decoding, and skip-attention preservation. The discriminator provides patch-level adversarial supervision while maintaining global contextual awareness.
+Output:
+    Frequency-aware bottleneck feature z
 
-The training procedure is organized into supervised warm-up, stabilized cycle-adversarial learning, end-to-end cycle-adversarial adaptation, and physics-guided fine-tuning. The supervised warm-up initializes the forward enhancement mapping with paired data. The cycle-adversarial stages then exploit unpaired degraded/reference-style domains through adversarial, cycle-consistency, identity, perceptual, total-variation, and anchor constraints. Finally, the physics-guided fine-tuning stage uses dark-channel and image-formation consistency priors as auxiliary regularization terms, while frozen discriminators provide stable adversarial feedback. This algorithmic summary clarifies the relationship among the generator, discriminator, frequency decomposition, skip-attention reconstruction, loss constraints, and stage-wise optimization strategy without exposing implementation-specific low-level operations.
+Procedure:
+    Map h into a centered spectral representation:
+        H = F(h)
 
----
+    Separate frequency components using symbolic masks:
+        H_low  = M_δ(H)
+        H_high = M̄_δ(H)
 
+    Return the two branches to the spatial feature domain:
+        h_low  = F^-(H_low)
+        h_high = F^-(H_high)
+
+    Model high-frequency structural information with a generic global selective state-space operator:
+        z_high = S_g(h_high)
+
+    Model low-frequency color and illumination information with a generic local patch-wise selective state-space operator:
+        z_low = P^-( S_l( P(h_low) ) )
+
+    Fuse the frequency-specific features using a protected attention-style fusion rule:
+        z_fuse = A_f(z_high, z_low)
+
+    Preserve bottleneck-level residual information:
+        z = z_fuse ⊕ h
+
+    Return z.
+```
+
+The exact spectral mask construction, patch granularity, internal selective-scan realization, branch depth, and fusion implementation are deliberately not expanded. These components are represented only as public, high-level academic operators.
+
+## Algorithm C: Secure Multi-Phase Training Procedure
+
+```text
+Input:
+    Paired training set D_AB^p
+    Unpaired training sets D_A^u and D_B^u
+    Validation sets V_AB^p and V_A^u
+    Generators G_{A→B}, G_{B→A}
+    Discriminators D_A, D_B
+    Symbolic phase schedules T_Φ
+    Symbolic loss weights λ_*^Φ
+    Symbolic optimization settings α_G, α_D, κ_D, ε
+
+Output:
+    Best validation-selected forward generator G_{A→B}^*
+
+Procedure:
+    Initialize G_{A→B}, G_{B→A}, D_A, and D_B.
+    Initialize symbolic optimizers for Θ_G and Θ_D.
+    Initialize best-score memory S_save^*.
+
+    For each training phase Φ in {I, II-a, II-b, III}:
+
+        Configure the trainable modules for phase Φ:
+            Phase I:
+                Train only the forward enhancement mapping G_{A→B}.
+                Use paired degraded/reference samples.
+
+            Phase II-a:
+                Train the cycle-adversarial framework on unpaired samples.
+                Keep selected shallow forward-generator feature extractors fixed for stabilization.
+                Use paired samples only as an auxiliary forward anchor.
+
+            Phase II-b:
+                Continue cycle-adversarial learning with the full forward generator unfrozen.
+                Use paired samples only as an auxiliary forward anchor.
+
+            Phase III:
+                Fine-tune the generators under fixed discriminator scoring.
+                Keep selected state-space stability parameters fixed.
+                Add physics-inspired consistency regularization only to the forward enhancement direction.
+
+        For each symbolic iteration τ within T_Φ:
+
+            If Φ is Phase I:
+                Sample a paired mini-batch (x_A^p, x_B^p) from D_AB^p.
+                Generate \hat{x}_B = G_{A→B}(x_A^p).
+                Compute supervised absolute reconstruction loss:
+                    L_G^Φ = L_abs(\hat{x}_B, x_B^p)
+                Update Θ_G of G_{A→B} only.
+
+            Otherwise:
+                Sample unpaired mini-batches x_A^u from D_A^u and x_B^u from D_B^u.
+                Optionally sample paired anchor mini-batch (x_A^p, x_B^p) from D_AB^p.
+
+                Forward translation:
+                    \hat{x}_B = G_{A→B}(x_A^u)
+
+                Reverse translation:
+                    \hat{x}_A = G_{B→A}(x_B^u)
+
+                Cycle reconstruction:
+                    \widetilde{x}_A = G_{B→A}(\hat{x}_B)
+                    \widetilde{x}_B = G_{A→B}(\hat{x}_A)
+
+                Identity mapping:
+                    x_B^{id} = G_{A→B}(x_B^u)
+                    x_A^{id} = G_{B→A}(x_A^u)
+
+                Compute generator-side losses:
+                    L_adv^G from D_B(\hat{x}_B) and D_A(\hat{x}_A)
+                    L_cyc from (\widetilde{x}_A, x_A^u) and (\widetilde{x}_B, x_B^u)
+                    L_id  from (x_B^{id}, x_B^u) and (x_A^{id}, x_A^u)
+                    L_tv  from \hat{x}_B only
+                    L_per from (\hat{x}_B, x_A^u) only
+                    L_anc from (G_{A→B}(x_A^p), x_B^p) only when the paired anchor is used
+
+                Combine the phase-dependent generator objective:
+                    L_G^Φ = λ_adv^Φ L_adv^G
+                            ⊕ λ_cyc^Φ L_cyc
+                            ⊕ λ_id^Φ  L_id
+                            ⊕ λ_tv^Φ  L_tv
+                            ⊕ λ_per^Φ L_per
+                            ⊕ λ_anc^Φ L_anc
+
+                If Φ is Phase III:
+                    Compute L_dark from \hat{x}_B.
+                    Compute L_phy from (\hat{x}_B, x_A^u).
+                    Extend the generator objective:
+                        L_G^Φ = L_G^Φ ⊕ λ_dark^Φ L_dark ⊕ λ_phy^Φ L_phy
+
+                Update generator parameters Θ_G using L_G^Φ.
+
+                If Φ permits discriminator learning and the symbolic update policy κ_D is satisfied:
+                    Compute discriminator-side least-squares adversarial loss:
+                        L_adv^D = L_DA ⊕ L_DB
+                    Update Θ_D using L_adv^D.
+                Otherwise:
+                    Keep discriminator parameters unchanged.
+
+        After each validation interval of phase Φ:
+            Evaluate paired validation quality:
+                S_q = η_P Ψ_P(PSNR) ⊕ η_S Ψ_S(SSIM) ⊕ η_E Ψ_E(E_abs)
+
+            If Φ is Phase III:
+                Evaluate physics-oriented validation consistency:
+                    S_phy = Ψ_phy(L_dark ⊕ L_phy)
+                Compute final checkpoint score:
+                    S_save = η_q S_q ⊕ η_φ S_phy
+            Otherwise:
+                Use image-quality score as the checkpoint score:
+                    S_save = S_q
+
+            If S_save improves over S_save^* by at least ε:
+                Save the public forward enhancement generator as G_{A→B}^*.
+                Update S_save^*.
+
+    Return G_{A→B}^*.
+```
+
+## Public Loss Definitions Used in the Pseudocode
+
+The following definitions are written at the level required for academic review and are not intended to reproduce the exact engineering implementation.
+
+### Bidirectional Translation
+
+$$
+\hat{x}_B = G_{A\rightarrow B}(x_A),
+\qquad
+\hat{x}_A = G_{B\rightarrow A}(x_B)
+$$
+
+$$
+\widetilde{x}_A = G_{B\rightarrow A}(\hat{x}_B),
+\qquad
+\widetilde{x}_B = G_{A\rightarrow B}(\hat{x}_A)
+$$
+
+### Generator-Side Objective
+
+For the cycle-adversarial phases, the symbolic generator objective is:
+
+$$
+\mathcal{L}_{G}^{\Phi}
+=
+\lambda_{adv}^{\Phi}\mathcal{L}_{adv}^{G}
++
+\lambda_{cyc}^{\Phi}\mathcal{L}_{cyc}
++
+\lambda_{id}^{\Phi}\mathcal{L}_{id}
++
+\lambda_{tv}^{\Phi}\mathcal{L}_{tv}
++
+\lambda_{per}^{\Phi}\mathcal{L}_{per}
++
+\lambda_{anc}^{\Phi}\mathcal{L}_{anc}.
+$$
+
+For the physics-guided fine-tuning phase, the objective is extended as:
+
+$$
+\mathcal{L}_{G}^{\Phi}
+\leftarrow
+\mathcal{L}_{G}^{\Phi}
++
+\lambda_{dark}^{\Phi}\mathcal{L}_{dark}
++
+\lambda_{phy}^{\Phi}\mathcal{L}_{phy}.
+$$
+
+Here, $\mathcal{L}_{tv}$, $\mathcal{L}_{per}$, $\mathcal{L}_{anc}$, $\mathcal{L}_{dark}$, and $\mathcal{L}_{phy}$ are applied to the forward enhancement direction $A\rightarrow B$ rather than symmetrically to both mappings.
+
+### Checkpoint Selection
+
+The symbolic image-quality score is expressed as:
+
+$$
+S_q
+=
+\eta_P\Psi_P(PSNR)
++
+\eta_S\Psi_S(SSIM)
++
+\eta_E\Psi_E(E_{abs}).
+$$
+
+The symbolic physics-consistency score is expressed as:
+
+$$
+S_{phy}=\Psi_{phy}\bigl(\mathcal{L}_{dark}+\mathcal{L}_{phy}\bigr).
+$$
+
+The final model-selection score is:
+
+$$
+S_{save}=S_q
+$$
+
+for the non-physics-guided phases, and
+
+$$
+S_{save}=\eta_q S_q+\eta_{\phi}S_{phy}
+$$
+
+for the physics-guided fine-tuning phase.
+
+## Reviewer-Oriented Logic Summary
+
+FreqMambaGAN first learns a stable forward enhancement mapping from paired degraded/reference data. It then performs unpaired bidirectional domain translation with adversarial, cycle-consistency, identity, perceptual, smoothness, and paired-anchor constraints. The generator bottleneck separates encoded features into low-frequency and high-frequency components, processes them through generic selective state-space branches, and fuses them before decoder reconstruction with skip-attention. In the final fine-tuning phase, physics-inspired regularization constrains the enhanced output without exposing or relying on private implementation details. The best forward generator is selected by a validation score that combines perceptual fidelity, structural preservation, pixel-level error, and, where applicable, physical consistency.
+
+## Reproducibility and Non-Disclosure Note
+
+This file is designed for manuscript review, not for source-level reproduction. It provides enough algorithmic structure for readers to understand the proposed framework while deliberately omitting fixed numerical settings, private function names, device-specific logic, dataset paths, exact branch depth, exact patch granularity, precise mask constants, and proprietary optimization details.
