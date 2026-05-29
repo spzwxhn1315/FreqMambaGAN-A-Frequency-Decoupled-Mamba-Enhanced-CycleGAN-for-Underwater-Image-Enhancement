@@ -111,13 +111,14 @@ Procedure:
     Map h into a centered spectral representation:
         H = F(h)
 
-    Separate frequency components using symbolic masks:
-        H_low  = M_δ(H)
-        H_high = M̄_δ(H)
+    Apply a symbolic low-frequency mask in the centered spectral domain:
+        H_low = M_δ(H)
 
-    Return the two branches to the spatial feature domain:
-        h_low  = F^-(H_low)
-        h_high = F^-(H_high)
+    Recover the low-frequency feature in the spatial feature domain:
+        h_low = F^-(H_low)
+
+    Compute the high-frequency feature by residual subtraction:
+        h_high = h ⊖ h_low
 
     Model high-frequency structural information with a generic global selective state-space operator:
         z_high = S_g(h_high)
