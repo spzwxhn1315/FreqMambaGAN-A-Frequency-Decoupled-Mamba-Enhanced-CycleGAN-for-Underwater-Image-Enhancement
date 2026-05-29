@@ -237,7 +237,7 @@ Procedure:
                 Otherwise:
                     Keep discriminator parameters unchanged.
 
-        After each validation interval of phase Φ:
+        After each epoch or predefined validation checkpoint of phase Φ:
             Evaluate paired validation quality:
                 S_q = η_P Ψ_P(PSNR) ⊕ η_S Ψ_S(SSIM) ⊕ η_E Ψ_E(E_abs)
 
